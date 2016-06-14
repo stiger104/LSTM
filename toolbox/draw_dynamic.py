@@ -4,25 +4,47 @@
 # Copyright (C) 2015 xuekun.zhuang <zhuangxuekun@limei.com>
 # Licensed under the Limei tech.co.ltd - http://www.limei.com
 
+# -*- coding: utf-8 -*-
+
 import numpy as np
-import mayavi.mlab as mlab
-import  moviepy.editor as mpy
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
-duration= 2 # duration of the animation in seconds (it will loop)
+# 每次产生一个新的坐标点
+def data_gen():
+    t = data_gen.t
+    cnt = 0
+    while cnt < 1000:
+        cnt+=1
+        t += 0.05
+        yield t, np.sin(2*np.pi*t) * np.exp(-t/10.)
+data_gen.t = 0
 
-# MAKE A FIGURE WITH MAYAVI
+# 绘图
+fig, ax = plt.subplots()
+line, = ax.plot([], [], lw=2)
+ax.set_ylim(-1.1, 1.1)
+ax.set_xlim(0, 5)
+ax.grid()
+xdata, ydata = [], []
 
-fig_myv = mlab.figure(size=(220,220), bgcolor=(1,1,1))
-X, Y = np.linspace(-2,2,200), np.linspace(-2,2,200)
-XX, YY = np.meshgrid(X,Y)
-ZZ = lambda d: np.sinc(XX**2+YY**2)+np.sin(XX+d)
+# 因为run的参数是调用函数data_gen,所以第一个参数可以不是framenum:设置line的数据,返回line
+def run(data):
+    # update the data
+    t,y = data
+    xdata.append(t)
+    ydata.append(y)
+    xmin, xmax = ax.get_xlim()
 
-# ANIMATE THE FIGURE WITH MOVIEPY, WRITE AN ANIMATED GIF
+    if t >= xmax:
+        ax.set_xlim(xmin, 2*xmax)
+        ax.figure.canvas.draw()
+    line.set_data(xdata, ydata)
 
-def make_frame(t):
-    mlab.clf() # clear the figure (to reset the colors)
-    mlab.mesh(YY,XX,ZZ(2*np.pi*t/duration), figure=fig_myv)
-    return mlab.screenshot(antialiased=True)
+    return line,
 
-animation = mpy.VideoClip(make_frame, duration=duration)
-animation.write_gif("sinc.gif", fps=20)
+# 每隔10秒调用函数run,run的参数为函数data_gen,
+# 表示图形只更新需要绘制的元素
+ani = animation.FuncAnimation(fig, run, data_gen, blit=True, interval=10,
+    repeat=False)
+plt.show()
