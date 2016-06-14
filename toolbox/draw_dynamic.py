@@ -4,7 +4,6 @@
 # Copyright (C) 2015 xuekun.zhuang <zhuangxuekun@limei.com>
 # Licensed under the Limei tech.co.ltd - http://www.limei.com
 
-# -*- coding: utf-8 -*-
 
 import numpy as np
 import matplotlib.pyplot as plt

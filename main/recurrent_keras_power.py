@@ -89,8 +89,8 @@ def run_network(model=None, data=None):
     global_start_time = time.time()
     epochs = 1
     ratio = 0.5
-    sequence_length = 50
-    path_to_dataset = './data/household_power_consumption.txt'
+    sequence_length = 10
+    path_to_dataset = '../data/household_power_consumption.txt'
 
     if data is None:
         print 'Loading data... '
@@ -107,7 +107,7 @@ def run_network(model=None, data=None):
     try:
         model.fit(
             X_train, y_train,
-            batch_size=512, nb_epoch=epochs, validation_split=0.05)
+            batch_size=50, nb_epoch=epochs, validation_split=0.05)
         predicted = model.predict(X_test)
         predicted = np.reshape(predicted, (predicted.size,))
     except KeyboardInterrupt:
