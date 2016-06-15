@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import csv
+import random
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers.recurrent import LSTM
 from keras.models import Sequential
@@ -18,7 +19,7 @@ def data_power_consumption(path_to_dataset,
                            ratio=1.0):
 
     # max_values = ratio * 2049280
-    max_values = ratio * 1000
+    max_values = ratio * 10000
 
     with open(path_to_dataset) as f:
         data = csv.reader(f, delimiter=";")
@@ -46,7 +47,35 @@ def data_power_consumption(path_to_dataset,
     print "Shift : ", result_mean
     print "Data  : ", result.shape
 
-    row = round(0.9 * result.shape[0])
+    row = int(round(0.9 * result.shape[0]))
+    train = result[:row, :]
+    np.random.shuffle(train)
+    X_train = train[:, :-1]
+    y_train = train[:, -1]
+    X_test = result[row:, :-1]
+    y_test = result[row:, -1]
+
+    X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+    X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
+
+    return [X_train, y_train, X_test, y_test]
+
+
+def input_source(sequence_length=60):
+    X = range(1000)
+    source = np.sin(X)
+
+    result = []
+    for index in range(len(source) - sequence_length):
+        result.append(source[index: index + sequence_length])
+    result = np.array(result)
+
+    result_mean = result.mean()
+    result -= result_mean
+    print "Shift : ", result_mean
+    print "Data  : ", result.shape
+
+    row = int(round(0.9 * result.shape[0]))
     train = result[:row, :]
     np.random.shuffle(train)
     X_train = train[:, :-1]
@@ -94,8 +123,9 @@ def run_network(model=None, data=None):
 
     if data is None:
         print 'Loading data... '
-        X_train, y_train, X_test, y_test = data_power_consumption(
-            path_to_dataset, sequence_length, ratio)
+        X_train, y_train, X_test, y_test = input_source(sequence_length)
+        # X_train, y_train, X_test, y_test = data_power_consumption(
+        #     path_to_dataset, sequence_length, ratio)
     else:
         X_train, y_train, X_test, y_test = data
 
@@ -107,7 +137,7 @@ def run_network(model=None, data=None):
     try:
         model.fit(
             X_train, y_train,
-            batch_size=50, nb_epoch=epochs, validation_split=0.05)
+            batch_size=100, nb_epoch=epochs, validation_split=0.05)
         predicted = model.predict(X_test)
         predicted = np.reshape(predicted, (predicted.size,))
     except KeyboardInterrupt:
@@ -115,14 +145,15 @@ def run_network(model=None, data=None):
         return model, y_test, 0
 
     try:
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(y_test[:100, 0])
-        plt.plot(predicted[:100, 0])
+        plt.plot(y_test[:100], 'b')
+        plt.plot(predicted[:100], 'r')
+        plt.title('Power consumption predict using LSTM')
+        plt.legend()
         plt.show()
     except Exception as e:
         print str(e)
     print 'Training duration (s) : ', time.time() - global_start_time
+
 
     return model, y_test, predicted
 
