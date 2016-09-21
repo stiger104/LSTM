@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import csv
-import random
 from keras.layers.core import Dense, Activation, Dropout
 from keras.layers.recurrent import LSTM
 from keras.models import Sequential
@@ -15,7 +14,7 @@ np.random.seed(1234)
 
 
 def data_power_consumption(path_to_dataset,
-                           sequence_length=50,
+                           sequence_length=10,
                            ratio=1.0):
 
     # max_values = ratio * 2049280
@@ -40,36 +39,9 @@ def data_power_consumption(path_to_dataset,
     result = []
     for index in range(len(power) - sequence_length):
         result.append(power[index: index + sequence_length])
+    print len(result)
     result = np.array(result)  # shape (2049230, 50)
-
-    result_mean = result.mean()
-    result -= result_mean
-    print "Shift : ", result_mean
-    print "Data  : ", result.shape
-
-    row = int(round(0.9 * result.shape[0]))
-    train = result[:row, :]
-    np.random.shuffle(train)
-    X_train = train[:, :-1]
-    y_train = train[:, -1]
-    X_test = result[row:, :-1]
-    y_test = result[row:, -1]
-
-    X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
-    X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
-
-    return [X_train, y_train, X_test, y_test]
-
-
-def input_source(sequence_length=60):
-    X = range(1000)
-    source = np.sin(X)
-
-    result = []
-    for index in range(len(source) - sequence_length):
-        result.append(source[index: index + sequence_length])
-    result = np.array(result)
-
+    print result.shape
     result_mean = result.mean()
     result -= result_mean
     print "Shift : ", result_mean
@@ -117,19 +89,18 @@ def build_model():
 def run_network(model=None, data=None):
     global_start_time = time.time()
     epochs = 1
-    ratio = 0.5
-    sequence_length = 10
-    path_to_dataset = '../data/household_power_consumption.txt'
+    ratio = 0.8
+    sequence_length = 60
+    path_to_dataset = '/Users/zhuangxk/Documents/data/household_power_consumption.txt'
 
     if data is None:
         print 'Loading data... '
-        X_train, y_train, X_test, y_test = input_source(sequence_length)
-        # X_train, y_train, X_test, y_test = data_power_consumption(
-        #     path_to_dataset, sequence_length, ratio)
+        X_train, y_train, X_test, y_test = data_power_consumption(
+            path_to_dataset, sequence_length, ratio)
     else:
         X_train, y_train, X_test, y_test = data
 
-    print '\nData Loaded. Compiling...\n'
+    print 'Data Loaded. Compiling...'
 
     if model is None:
         model = build_model()
@@ -154,10 +125,9 @@ def run_network(model=None, data=None):
         print str(e)
     print 'Training duration (s) : ', time.time() - global_start_time
 
-
     return model, y_test, predicted
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
 
     run_network()
